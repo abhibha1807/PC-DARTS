@@ -11,9 +11,13 @@ import genotypes
 import torch.utils
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
+from torchvision import transforms, datasets, models
 
 from torch.autograd import Variable
 from model import NetworkCIFAR as Network
+
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -36,7 +40,7 @@ log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
     format=log_format, datefmt='%m/%d %I:%M:%S %p')
 
-CIFAR_CLASSES = 10
+CIFAR_CLASSES = 2
 
 
 def main():
@@ -55,8 +59,9 @@ def main():
 
   genotype = eval("genotypes.%s" % args.arch)
   model = Network(args.init_channels, CIFAR_CLASSES, args.layers, args.auxiliary, genotype)
+  utils.load(model, './search-EXP-20210708-180520/weights.pt')
   model = model.cuda()
-  utils.load(model, args.model_path)
+  #utils.load(model, args.model_path)
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
@@ -64,8 +69,22 @@ def main():
   criterion = criterion.cuda()
 
   _, test_transform = utils._data_transforms_cifar10(args)
-  test_data = dset.CIFAR10(root=args.data, train=False, download=True, transform=test_transform)
+  #test_data = dset.CIFAR10(root=args.data, train=False, download=True, transform=test_transform)
+  datadir=args.data
+  print(datadir)
+  traindir = datadir + '/train/'
+  validdir = datadir + '/val/'
+  testdir = datadir + '/test/'
+  data = {
+  'train':
+  datasets.ImageFolder(root=traindir, transform=test_transform),
+  'val':
+  datasets.ImageFolder(root=validdir, transform=test_transform),
+  'test':
+  datasets.ImageFolder(root=testdir, transform=test_transform)
+}
 
+  test_data=data['test']
   test_queue = torch.utils.data.DataLoader(
       test_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
@@ -87,7 +106,7 @@ def infer(test_queue, model, criterion):
     logits, _ = model(input)
     loss = criterion(logits, target)
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 1))
     n = input.size(0)
     objs.update(loss.data[0], n)
     top1.update(prec1.data[0], n)

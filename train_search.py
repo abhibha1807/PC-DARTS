@@ -12,10 +12,14 @@ import torch.utils
 import torch.nn.functional as F
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
+from torchvision import transforms, datasets, models
 
 from torch.autograd import Variable
 from model_search import Network
 from architect import Architect
+
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -55,9 +59,9 @@ fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
 
-CIFAR_CLASSES = 10
+CIFAR_CLASSES = 2
 if args.set=='cifar100':
-    CIFAR_CLASSES = 100
+    CIFAR_CLASSES = 2
 def main():
   if not torch.cuda.is_available():
     logging.info('no gpu device available')
@@ -85,11 +89,28 @@ def main():
       weight_decay=args.weight_decay)
 
   train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  if args.set=='cifar100':
-      train_data = dset.CIFAR100(root=args.data, train=True, download=True, transform=train_transform)
-  else:
-      train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
+  # if args.set=='cifar100':
+  #     train_data = dset.CIFAR100(root=args.data, train=True, download=True, transform=train_transform)
+  # else:
+  #     train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
 
+  datadir=args.data
+  print(datadir)
+  traindir = datadir + '/train/'
+  validdir = datadir + '/val/'
+  testdir = datadir + '/test/'
+  data = {
+  'train':
+  datasets.ImageFolder(root=traindir, transform=train_transform),
+  'val':
+  datasets.ImageFolder(root=validdir, transform=train_transform),
+  'test':
+  datasets.ImageFolder(root=testdir, transform=train_transform)
+}
+  train_data=data['train']
+  u_data=data['val']
+  
+  
   num_train = len(train_data)
   indices = list(range(num_train))
   split = int(np.floor(args.train_portion * num_train))
@@ -129,7 +150,7 @@ def main():
       valid_acc, valid_obj = infer(valid_queue, model, criterion)
       logging.info('valid_acc %f', valid_acc)
 
-    utils.save(model, os.path.join(args.save, 'weights.pt'))
+    utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
 
 
 def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr,epoch):
@@ -164,7 +185,7 @@ def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr,e
     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
     optimizer.step()
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 1))
     objs.update(loss.data[0], n)
     top1.update(prec1.data[0], n)
     top5.update(prec5.data[0], n)
@@ -189,7 +210,7 @@ def infer(valid_queue, model, criterion):
     logits = model(input)
     loss = criterion(logits, target)
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 1))
     n = input.size(0)
     objs.update(loss.data[0], n)
     top1.update(prec1.data[0], n)
