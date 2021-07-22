@@ -6,5 +6,5 @@ pwd
 source activate /abhibha-volume/darts
 conda info
 which python
-python /abhibha-volume/pcdarts/train.py
+python /abhibha-volume/PC-DARTS/train.py
 #python train_search.py --unrolled
