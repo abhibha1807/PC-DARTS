@@ -56,6 +56,7 @@ logging.getLogger().addHandler(fh)
 
 CIFAR_CLASSES = 2
 
+
 if args.set=='cifar100':
     CIFAR_CLASSES = 2
 def main():
