@@ -44,7 +44,7 @@ parser.add_argument('--arch', type=str, default='PCDARTS', help='which architect
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
 args = parser.parse_args()
 
-args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = 'try3eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -112,7 +112,7 @@ def main():
 }
 
   train_data=data['train']
-  valid_data=data['test']
+  valid_data=data['val']
 
   train_queue = torch.utils.data.DataLoader(
       train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
@@ -135,7 +135,10 @@ def main():
         best_acc = valid_acc
     logging.info('valid_acc %f, best_acc %f', valid_acc, best_acc)
 
-    utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
+    print('saving model')
+    # utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
+    torch.save(model, os.path.join(args.save, 'weights.pt'))
+
 
 
 def train(train_queue, model, criterion, optimizer):
@@ -151,6 +154,7 @@ def train(train_queue, model, criterion, optimizer):
     optimizer.zero_grad()
     logits, logits_aux = model(input)
     loss = criterion(logits, target)
+    print('train loss:', loss)
     if args.auxiliary:
       loss_aux = criterion(logits_aux, target)
       loss += args.auxiliary_weight*loss_aux
@@ -182,7 +186,7 @@ def infer(valid_queue, model, criterion):
 
     logits, _ = model(input)
     loss = criterion(logits, target)
-
+    print('val loss:', loss)
     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 1))
     n = input.size(0)
     objs.update(loss.data[0], n)
