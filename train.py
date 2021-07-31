@@ -73,7 +73,8 @@ def main():
   logging.info("args = %s", args)
 
   genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels, CIFAR_CLASSES, args.layers, args.auxiliary, genotype)
+  #model = Network(args.init_channels, CIFAR_CLASSES, args.layers, args.auxiliary, genotype)
+  model=torch.load('/abhibha-volume/PC-DARTS/try3eval-EXP-20210731-072144/weights.pt')
   model = model.cuda()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
@@ -112,7 +113,7 @@ def main():
 }
 
   train_data=data['train']
-  valid_data=data['val']
+  valid_data=data['test']
 
   train_queue = torch.utils.data.DataLoader(
       train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
@@ -127,17 +128,18 @@ def main():
     logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
     model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
 
-    train_acc, train_obj = train(train_queue, model, criterion, optimizer)
-    logging.info('train_acc %f', train_acc)
+    # train_acc, train_obj = train(train_queue, model, criterion, optimizer)
+    # logging.info('train_acc %f', train_acc)
 
     valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    if valid_acc > best_acc:
-        best_acc = valid_acc
-    logging.info('valid_acc %f, best_acc %f', valid_acc, best_acc)
+    # if valid_acc > best_acc:
+    #     best_acc = valid_acc
+    #best_acc
+    logging.info('valid_acc %f, best_acc %f', valid_acc)
 
-    print('saving model')
+    #print('saving model')
     # utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
-    torch.save(model, os.path.join(args.save, 'weights.pt'))
+    #torch.save(model, os.path.join(args.save, 'weights.pt'))
 
 
 
