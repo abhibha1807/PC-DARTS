@@ -132,10 +132,9 @@ def main():
     # logging.info('train_acc %f', train_acc)
 
     valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    # if valid_acc > best_acc:
-    #     best_acc = valid_acc
-    #best_acc
-    logging.info('valid_acc %f, best_acc %f', valid_acc)
+    if valid_acc > best_acc:
+        best_acc = valid_acc
+    logging.info('valid_acc %f, best_acc %f', valid_acc, best_acc)
 
     #print('saving model')
     # utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
