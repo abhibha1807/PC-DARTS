@@ -113,7 +113,7 @@ def main():
 }
 
   train_data=data['train']
-  valid_data=data['test']
+  valid_data=data['val']
 
   train_queue = torch.utils.data.DataLoader(
       train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
