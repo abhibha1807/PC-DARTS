@@ -89,15 +89,7 @@ def main():
       )
 
   train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  # if args.set=='cifar100':
-  #     train_data = dset.CIFAR100(root=args.data, train=True, download=True, transform=train_transform)
-  #     valid_data = dset.CIFAR100(root=args.data, train=False, download=True, transform=valid_transform)
-  # else:
-  #     train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
-  #     valid_data = dset.CIFAR10(root=args.data, train=False, download=True, transform=valid_transform)
-  #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
-  #valid_data = dset.CIFAR10(root=args.data, train=False, download=True, transform=valid_transform)
-
+  
   datadir=args.data
   print(datadir)
   traindir = datadir + '/train/'
@@ -136,10 +128,7 @@ def main():
         best_acc = valid_acc
     logging.info('valid_acc %f, best_acc %f', valid_acc, best_acc)
 
-    print('saving model')
-    utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
-    #torch.save(model, os.path.join(args.save, 'weights.pt'))
-
+    utils.save(model, os.path.join(args.save, 'weights.pt'))
 
 
 def train(train_queue, model, criterion, optimizer):
@@ -155,7 +144,6 @@ def train(train_queue, model, criterion, optimizer):
     optimizer.zero_grad()
     logits, logits_aux = model(input)
     loss = criterion(logits, target)
-    print('train loss:', loss)
     if args.auxiliary:
       loss_aux = criterion(logits_aux, target)
       loss += args.auxiliary_weight*loss_aux
@@ -187,8 +175,8 @@ def infer(valid_queue, model, criterion):
 
     logits, _ = model(input)
     loss = criterion(logits, target)
-    print('val loss:', loss)
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 2))
+
+    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 1))
     n = input.size(0)
     objs.update(loss.data[0], n)
     top1.update(prec1.data[0], n)
@@ -198,6 +186,7 @@ def infer(valid_queue, model, criterion):
       logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
 
   return top1.avg, objs.avg
+
 
 
 if __name__ == '__main__':
