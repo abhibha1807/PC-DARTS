@@ -29,7 +29,7 @@ parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
 parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-parser.add_argument('--epochs', type=int, default=20, help='num of training epochs')
+parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
 parser.add_argument('--init_channels', type=int, default=36, help='num of init channels')
 parser.add_argument('--layers', type=int, default=20, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
@@ -44,7 +44,7 @@ parser.add_argument('--arch', type=str, default='PCDARTS', help='which architect
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
 args = parser.parse_args()
 
-args.save = 'new_eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -74,7 +74,6 @@ def main():
 
   genotype = eval("genotypes.%s" % args.arch)
   model = Network(args.init_channels, CIFAR_CLASSES, args.layers, args.auxiliary, genotype)
-  # model=torch.load('/abhibha-volume/PC-DARTS/try3eval-EXP-20210731-072144/weights.pt')
   model = model.cuda()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
@@ -107,9 +106,9 @@ def main():
   'train':
   datasets.ImageFolder(root=traindir, transform=train_transform),
   'val':
-  datasets.ImageFolder(root=validdir, transform=valid_transform),
+  datasets.ImageFolder(root=validdir, transform=train_transform),
   'test':
-  datasets.ImageFolder(root=testdir, transform=valid_transform)
+  datasets.ImageFolder(root=testdir, transform=train_transform)
 }
 
   train_data=data['train']
@@ -136,10 +135,7 @@ def main():
         best_acc = valid_acc
     logging.info('valid_acc %f, best_acc %f', valid_acc, best_acc)
 
-    print('saving model')
     utils.save(model, './'+os.path.join(args.save, 'weights.pt'))
-    #torch.save(model, os.path.join(args.save, 'weights.pt'))
-
 
 
 def train(train_queue, model, criterion, optimizer):
@@ -155,7 +151,6 @@ def train(train_queue, model, criterion, optimizer):
     optimizer.zero_grad()
     logits, logits_aux = model(input)
     loss = criterion(logits, target)
-    print('train loss:', loss)
     if args.auxiliary:
       loss_aux = criterion(logits_aux, target)
       loss += args.auxiliary_weight*loss_aux
@@ -187,8 +182,8 @@ def infer(valid_queue, model, criterion):
 
     logits, _ = model(input)
     loss = criterion(logits, target)
-    print('val loss:', loss)
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 2))
+
+    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 1))
     n = input.size(0)
     objs.update(loss.data[0], n)
     top1.update(prec1.data[0], n)
