@@ -99,7 +99,7 @@ def main():
   'train':
   datasets.ImageFolder(root=traindir, transform=train_transform),
   'val':
-  datasets.ImageFolder(root=validdir, transform=train_transform),
+  datasets.ImageFolder(root=validdir, transform=valid_transform),
   'test':
   datasets.ImageFolder(root=testdir, transform=valid_transform)
 }
